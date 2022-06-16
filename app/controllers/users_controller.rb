@@ -16,7 +16,6 @@ class UsersController < ApplicationController
     # on form submit we check to see if email exists AND if password is valid
     # by using our params object
     @user = User.find_by_email(params[:email])
-    
     if @user && @user.authenticate(params[:password])
       # create token 
       auth_token = Knock::AuthToken.new payload: {sub: @user.id}
