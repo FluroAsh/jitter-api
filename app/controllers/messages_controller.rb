@@ -1,17 +1,51 @@
 class MessagesController < ApplicationController
-  before_action :authenticate_user, except: [:index, :show] 
+  before_action :authenticate_user, except: [:index, :show, :user_messages] 
   before_action :set_message, only: [:show, :update, :destroy]
   before_action :check_ownership, only: [:update, :destroy]
 
   # GET /messages
   def index
-    # @messages = Message.order("updated_at DESC")
     @messages = []
-    Message.order("updated_at DESC").each do |message|
+
+    pp params[:username]
+    # Check for query string, eg: messages/Ash
+    if (params[:username])
+      Message.find_by_user(params[:username]).order("updated_at DESC").each do |message|
+        @messages << message.transform_message
+        pp "Successful Query"
+      end
+    else # else return all messages
+      Message.order("updated_at DESC").each do |message|
+        @messages << message.transform_message
+      end
+    end
+
+    if @messages.count == 0
+      render json: {error: "No messages found"}
+    else
+      render json: @messages
+    end
+  end
+
+  def my_messages
+    @messages = []
+
+    current_user.messages.order("updated_at DESC").each do |message|
       @messages << message.transform_message
     end
 
     render json: @messages
+  end
+
+  def user_messages 
+    @messages = []
+
+    Message.find_by_user(params[:username]).order("updated_at DESC").each do |message|
+      @messages << message.transform_message
+    end
+
+    render json: @messages
+
   end
 
   # GET /messages/1
@@ -46,12 +80,12 @@ class MessagesController < ApplicationController
   # DELETE /messages/1
   def destroy
     @message.destroy
+    render json: Message.all, status: 200
   end
 
   private
-
     def check_ownership
-      if current_user.id != @message.user.id
+      if !(current_user.is_admin || current_user.id == @message.user.id)
         render json: {error: "Unauthorised to do this action"}
       end
     end

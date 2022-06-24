@@ -1,8 +1,10 @@
 Rails.application.routes.draw do
+  get '/messages/mymessages', to: 'messages#my_messages' # 1st place to avoid /messages/my_messages
+  get '/messages/user/:username', to: 'messages#user_messages'
   resources :messages
-  # For details on the DSL available within this file, see https://guides.rubyonrails.org/routing.html
   scope '/auth' do
+    get "/users", to: "users#index"
     post "/signup", to: "users#create"
-    post "/signin", to: "users#sign_in"
+    post "/login", to: "users#login"
   end
 end
